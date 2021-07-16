@@ -1,0 +1,78 @@
+{
+    "common": {
+        "name": "google-assistant",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Начальная версия",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "zh-cn": "首次出版"
+            }
+        },
+        "titleLang": {
+            "en": "Google Assistant",
+            "de": "Google Assistant",
+            "ru": "Google Ассистент",
+            "pt": "Google Assistant",
+            "nl": "Google Assistent",
+            "fr": "Assistant Google",
+            "it": "Assistente Google",
+            "es": "Asistente de Google",
+            "pl": "Asystent Google",
+            "zh-cn": "谷歌助理"
+        },
+        "desc": {
+            "en": "This Adapter enables the usage of ioBroker and its devices via Google Assistant.",
+            "de": "Dieser Adapter ermöglicht die Nutzung von ioBroker und seinen Geräten über Google Assistant.",
+            "ru": "Этот адаптер позволяет использовать ioBroker и его устройства через Google Assistant.",
+            "pt": "Este adaptador permite o uso de ioBroker e seus dispositivos por meio do Google Assistant.",
+            "nl": "Deze adapter maakt het gebruik van ioBroker en zijn apparaten mogelijk via Google Assistant.",
+            "fr": "Cet adaptateur permet l'utilisation d'ioBroker et de ses appareils via Google Assistant.",
+            "it": "Questo adattatore consente l'utilizzo di ioBroker e dei suoi dispositivi tramite l'Assistente Google.",
+            "es": "Este adaptador permite el uso de ioBroker y sus dispositivos a través del Asistente de Google.",
+            "pl": "Ten adapter umożliwia korzystanie z ioBroker i jego urządzeń za pośrednictwem Asystenta Google.",
+            "zh-cn": "此适配器支持通过 Google Assistant 使用 ioBroker 及其设备。"
+        },
+        "authors": [
+            "iak <iak.tern+iobroker@gmail.com>"
+        ],
+        "keywords": [
+            "Google",
+            "Assistant",
+            "Speech",
+            "Smart Speaker"
+        ],
+        "license": "AGPL-3.0",
+        "platform": "Javascript/Node.js",
+        "main": "main.js",
+        "icon": "google-assistant.png",
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/iaktern/ioBroker.google-assistant/master/admin/google-assistant.png",
+        "readme": "https://github.com/iaktern/ioBroker.google-assistant/blob/master/README.md",
+        "loglevel": "info",
+        "mode": "daemon",
+        "type": "iot-systems",
+        "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "push",
+        "materialize": true,
+        "dependencies": [
+            {
+                "js-controller": ">=2.0.0"
+            }
+        ]
+    },
+    "native": {
+        "option1": true,
+        "option2": "42"
+    },
+    "objects": [],
+    "instanceObjects": []
+}

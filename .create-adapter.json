@@ -1,0 +1,43 @@
+{
+    "cli": true,
+    "adapterName": "google-assistant",
+    "title": "Google Assistant",
+    "description": "This Adapter enables the usage of ioBroker and its devices via Google Assistant.",
+    "keywords": [
+        "Google",
+        "Assistant",
+        "Speech",
+        "Smart Speaker"
+    ],
+    "expert": "no",
+    "features": [
+        "adapter"
+    ],
+    "adminFeatures": [],
+    "type": "iot-systems",
+    "startMode": "daemon",
+    "connectionType": "cloud",
+    "dataSource": "push",
+    "connectionIndicator": "no",
+    "language": "JavaScript",
+    "adminReact": "no",
+    "tools": [
+        "ESLint",
+        "type checking"
+    ],
+    "releaseScript": "yes",
+    "devServer": "yes",
+    "devServerPort": 8082,
+    "indentation": "Space (4)",
+    "quotes": "single",
+    "es6class": "yes",
+    "authorName": "iak",
+    "authorGithub": "iaktern",
+    "authorEmail": "iak.tern+iobroker@gmail.com",
+    "gitRemoteProtocol": "HTTPS",
+    "gitCommit": "no",
+    "license": "GNU AGPLv3",
+    "ci": "gh-actions",
+    "dependabot": "no",
+    "creatorVersion": "1.34.1"
+}
