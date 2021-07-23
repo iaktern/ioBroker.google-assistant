@@ -40,15 +40,8 @@
             "pl": "Ten adapter umożliwia korzystanie z ioBroker i jego urządzeń za pośrednictwem Asystenta Google.",
             "zh-cn": "此适配器支持通过 Google Assistant 使用 ioBroker 及其设备。"
         },
-        "authors": [
-            "iak <iak.tern+iobroker@gmail.com>"
-        ],
-        "keywords": [
-            "Google",
-            "Assistant",
-            "Speech",
-            "Smart Speaker"
-        ],
+        "authors": ["iak <iak.tern+iobroker@gmail.com>"],
+        "keywords": ["Google", "Assistant", "Speech", "Smart Speaker"],
         "license": "AGPL-3.0",
         "platform": "Javascript/Node.js",
         "main": "main.js",
@@ -70,8 +63,8 @@
         ]
     },
     "native": {
-        "option1": true,
-        "option2": "42"
+        "websocketurl": "http://localhost",
+        "port": "33111"
     },
     "objects": [],
     "instanceObjects": []

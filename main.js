@@ -7,6 +7,7 @@
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
 const utils = require('@iobroker/adapter-core');
+const io = require('socket.io-client');
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -33,8 +34,158 @@ class GoogleAssistant extends utils.Adapter {
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady() {
-        // Initialize your adapter here
+        await this.getRoomsAndDevices();
+        await this.connectToCloudWebSocket();
 
+        // /** examples */
+
+        // // ioBroker examples
+        // this.subscribeToStatesInIobroker();
+        // // ioBroker examples for the checkPassword/checkGroup functions
+        // await this.showConfigurationsAndAttributes();
+        // // ioBroker examples
+        // await this.setStates();
+        // // ioBroker examples
+        // await this.readStates();
+    }
+
+    async connectToCloudWebSocket() {
+        // this variable indicates in the GUI the connection to the service/device
+        // createStateAsync: device, channel, state, role|common-object
+        await this.createStateAsync('', 'info', 'connection', {
+            type: 'boolean',
+            role: 'indicator.connected',
+            read: true,
+            write: false,
+            def: false,
+        });
+        // await this.setObjectAsync('info.connection', {
+        //     type: 'state',
+        //     common: {
+        //         name: 'connection',
+        //         type: 'boolean',
+        //         role: 'indicator.connected',
+        //         read: true,
+        //         write: false,
+        //     },
+        //     native: {},
+        // });
+
+        const url = `${this.config.websocketurl}:${this.config.port}`;
+
+        this.log.info(`WebSocket URL to connect to from configuration: ${url}`);
+
+        /** */
+        const socket = io(url);
+
+        // client-side
+        socket.on('connect', async () => {
+            this.log.info('WebSocket Event: connect' + socket.id); // x8WIv7-mJelg7on_ALbx
+            await this.setStateAsync('info.connection', {
+                val: true,
+                ack: true,
+            });
+        });
+
+        socket.on('connect_error', () => {
+            this.log.info('WebSocket Event: connect_error');
+        });
+
+        socket.on('disconnect', async () => {
+            this.log.info('WebSocket Event: disconnect' + socket.id); // undefined
+            await this.setStateAsync('info.connection', {
+                val: false,
+                ack: true,
+            });
+        });
+
+        socket.io.on('reconnect_attempt', async () => {
+            this.log.info('WebSocket Event: Reconnect_Attempt');
+            await this.setStateAsync('info.connection', {
+                val: false,
+                ack: true,
+            });
+        });
+
+        socket.io.on('reconnect', () => {
+            this.log.info('WebSocket Event: Reconnect');
+        });
+    }
+
+    async getRoomsAndDevices() {
+        this.log.info(
+            '\n\nEnums: ' + JSON.stringify(await this.getEnumAsync(''))
+        );
+        /*
+         * { "enum.rooms.hall": { ..., members: [<states>], ...},
+         *   "enum.rooms.bathroom": { ..., members: [<states>], ...},
+         *   "enum.rooms.living_room": { ..., members: [<states>], ...},
+         * }
+         */
+        const roomsEnum = (await this.getEnumAsync('enum.rooms')).result;
+
+        /*
+         * Map< 'room', { metaInfoGoogle: { ... }, deviceMap: Map< 'objectId', { metaInfo: {}, metaInfoGoogle: {}, currentState: {...} } > }}
+         * for example:
+         * Map< 'enum.rooms.hall', { googleMetaInfo: { ... }, deviceMap: Map< '0_userdata.0.example_state', { ... } > }}
+         */
+        const roomMap = new Map();
+        for (const room of Object.keys(roomsEnum)) {
+            this.log.info(room);
+            // this.log.info(roomsEnum[room].common.members);
+
+            const deviceMapForRoom = await this.getDeviceInfos(
+                roomsEnum[room].common.members
+            );
+
+            this.log.info(
+                'deviceMap: ' + JSON.stringify(Array.from(deviceMapForRoom))
+            );
+            roomMap.set(room, {
+                googleMetaInfo: {},
+                deviceMap: deviceMapForRoom,
+            });
+        }
+        this.log.info('roomMap: ' + JSON.stringify(Array.from(roomMap)));
+    }
+
+    async getDeviceInfos(deviceIds) {
+        const _deviceMapForRoom = new Map();
+        for (const objectId of deviceIds) {
+            const tmpMetaInfo =
+                (await this.getForeignObjectAsync(objectId)) || {};
+            const tmpCurrentState =
+                (await this.getForeignStateAsync(objectId)) || {};
+            this.log.info(
+                'Device found in room "' + objectId + '" '
+                // + JSON.stringify(
+                //     tmpMetaInfo
+                // )
+            );
+
+            // test if 'state' and not other object type
+            if (tmpMetaInfo.type !== 'state') {
+                this.log.info(
+                    'The device "' +
+                        objectId +
+                        '" is not a state and will not be added to the device list: ' +
+                        JSON.stringify(tmpMetaInfo)
+                );
+                continue;
+            }
+
+            //TODO: test if the states 'role' has a matching Google type
+
+            _deviceMapForRoom.set(objectId, {
+                metaInfo: tmpMetaInfo,
+                metaInfoGoogle: {},
+                currentState: tmpCurrentState,
+            });
+        }
+        return _deviceMapForRoom;
+    }
+
+    async setStates() {
         /*
         For every state in the system there has to be also an object of type state
         Here a simple template for a boolean variable named "testVariable"
@@ -51,12 +202,6 @@ class GoogleAssistant extends utils.Adapter {
             },
             native: {},
         });
-
-        // this variable indicates in the GUI the connection to the service/device
-        await this.createStateAsync('', 'info', 'connection', 'indicator'); // device, channel, state, role
-        await this.setStateAsync('info.connection', { val: true, ack: true });
-
-        this.subscribeToStatesInIobroker();
 
         /*
             setState examples
@@ -77,10 +222,9 @@ class GoogleAssistant extends utils.Adapter {
         });
 
         await this.setForeignStateAsync('0_userdata.0.example_state', 200);
+    }
 
-        // examples for the checkPassword/checkGroup functions
-        await this.showConfigurationsAndAttributes();
-
+    async readStates() {
         this.log.info(
             'State ausgelesen: ' +
                 JSON.stringify(await this.getStateAsync('testVariable'))
@@ -93,88 +237,12 @@ class GoogleAssistant extends utils.Adapter {
                 )
         );
 
-        this.log.info(
+        this.log.debug(
             'Description of adapter admin: ' +
                 JSON.stringify(
                     await this.getForeignObjectAsync('system.adapter.admin')
                 )
         );
-
-        await this.showRooms();
-    }
-
-    async showRooms() {
-        this.log.info(
-            '\n\nEnums: ' + JSON.stringify(await this.getEnumAsync(''))
-        );
-        /*
-         * { "enum.rooms.hall": { ..., members: [<states>], ...},
-         *   "enum.rooms.bathroom": { ..., members: [<states>], ...},
-         *   "enum.rooms.living_room": { ..., members: [<states>], ...},
-         * }
-         */
-        const roomsEnum = (await this.getEnumAsync('enum.rooms')).result;
-        console.log(roomsEnum);
-
-        /*
-         * Map< 'room', { metaInfoGoogle: { ... }, deviceMap: Map< 'objectId', { metaInfo: {}, metaInfoGoogle: {}, currentState: {...} } > }}
-         * for example:
-         * Map< 'enum.rooms.hall', { googleMetaInfo: { ... }, deviceMap: Map< '0_userdata.0.example_state', { ... } > }}
-         */
-        const roomMap = new Map();
-        for (const room of Object.keys(roomsEnum)) {
-            this.log.debug(room);
-            // this.log.debug(roomsEnum[room].common.members);
-
-            const deviceMapForRoom = await this.getDeviceInfos(
-                roomsEnum[room].common.members
-            );
-
-            this.log.debug(
-                'deviceMap: ' + JSON.stringify(Array.from(deviceMapForRoom))
-            );
-            roomMap.set(room, {
-                googleMetaInfo: {},
-                deviceMap: deviceMapForRoom,
-            });
-        }
-        this.log.debug('roomMap: ' + JSON.stringify(Array.from(roomMap)));
-    }
-
-    async getDeviceInfos(deviceIds) {
-        const _deviceMapForRoom = new Map();
-        for (const objectId of deviceIds) {
-            const tmpMetaInfo =
-                (await this.getForeignObjectAsync(objectId)) || {};
-            const tmpCurrentState =
-                (await this.getForeignStateAsync(objectId)) || {};
-            this.log.debug(
-                'Device found in room "' + objectId + '" '
-                // + JSON.stringify(
-                //     tmpMetaInfo
-                // )
-            );
-
-            // test if 'state' and not other object type
-            if (tmpMetaInfo.type !== 'state') {
-                this.log.debug(
-                    'The device "' +
-                        objectId +
-                        '" is not a state and will not be added to the device list: ' +
-                        JSON.stringify(tmpMetaInfo)
-                );
-                continue;
-            }
-
-            //TODO: test if the states 'role' has a matching Google type
-
-            _deviceMapForRoom.set(objectId, {
-                metaInfo: tmpMetaInfo,
-                metaInfoGoogle: {},
-                currentState: tmpCurrentState,
-            });
-        }
-        return _deviceMapForRoom;
     }
 
     subscribeToStatesInIobroker() {
@@ -217,7 +285,7 @@ class GoogleAssistant extends utils.Adapter {
         // this.log.info('\npack ' + JSON.stringify(this.pack));
         // ioBroker configuration (stored in file iobroker-data/iobroker.json)
         // needed to be activated in adapter constructor
-        this.log.debug('systemcConfig: ' + JSON.stringify(this.systemConfig));
+        this.log.debug('systemConfig: ' + JSON.stringify(this.systemConfig));
 
         this.log.info(
             `Variablen: 
