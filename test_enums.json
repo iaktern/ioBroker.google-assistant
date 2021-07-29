@@ -1,0 +1,181 @@
+{
+    "result": {
+        "enum.rooms.hall": {
+            "type": "enum",
+            "common": {
+                "name": {
+                    "en": "Hall",
+                    "ru": "Зал",
+                    "de": "Diele",
+                    "fr": "Salle",
+                    "it": "Sala",
+                    "nl": "Hal",
+                    "pl": "Sala",
+                    "pt": "Corredor",
+                    "es": "Sala",
+                    "zh-cn": "大厅"
+                },
+                "enabled": true,
+                "color": false,
+                "desc": "",
+                "members": ["google-assistant.0.testVariable"],
+                "icon": "data:image/svg+xml;base64,PHN2Z...c3ZnPg0K"
+            },
+            "native": {},
+            "_id": "enum.rooms.hall",
+            "from": "system.adapter.admin.0",
+            "user": "system.user.admin",
+            "ts": 1626725904971
+        },
+        "enum.rooms.living_room": {
+            "type": "enum",
+            "common": {
+                "name": {
+                    "en": "Living Room",
+                    "ru": "Гостинная",
+                    "de": "Wohnzimmer",
+                    "fr": "Le Salon",
+                    "it": "Soggiorno",
+                    "nl": "Woonkamer",
+                    "pl": "Salon",
+                    "pt": "Sala De Estar",
+                    "es": "Sala De Estar",
+                    "zh-cn": "客厅"
+                },
+                "enabled": true,
+                "color": false,
+                "desc": "",
+                "members": [],
+                "icon": "data:image/svg+xml;base64,PHN2...wvc3ZnPgo="
+            },
+            "native": {},
+            "_id": "enum.rooms.living_room",
+            "from": "system.adapter.admin.0",
+            "user": "system.user.admin",
+            "ts": 1626726507458
+        },
+        "enum.rooms.bathroom": {
+            "type": "enum",
+            "common": {
+                "name": {
+                    "en": "Bathroom",
+                    "ru": "Ванная Комната",
+                    "de": "Badezimmer",
+                    "fr": "Salle De Bains",
+                    "it": "Bagno",
+                    "nl": "Badkamer",
+                    "pl": "Łazienka",
+                    "pt": "Banheiro",
+                    "es": "Baño",
+                    "zh-cn": "浴室"
+                },
+                "enabled": true,
+                "color": false,
+                "desc": "",
+                "members": [],
+                "icon": "data:image/svg+xml;base64,PHN2ZyB...0K"
+            },
+            "native": {},
+            "_id": "enum.rooms.bathroom",
+            "from": "system.adapter.admin.0",
+            "user": "system.user.admin",
+            "ts": 1626726562695
+        }
+    },
+
+    "device_info_for_one_example_member": [
+        [
+            "0_userdata.0.example_state",
+            {
+                "metaInfo": {
+                    "_id": "0_userdata.0.example_state",
+                    "type": "state",
+                    "common": {
+                        "name": "Example state",
+                        "role": "indicator",
+                        "def": false,
+                        "type": "boolean"
+                    },
+                    "acl": {
+                        "owner": "system.user.admin",
+                        "ownerGroup": "system.group.administrator",
+                        "object": 1604
+                    },
+                    "from": "system.host.dev-google-assistant-kai-ThinkPad-T480.cli",
+                    "ts": 1627075667367
+                },
+                "metaInfoGoogle": {},
+                "currentState": {
+                    "val": 200,
+                    "ack": false,
+                    "ts": 1627077066939,
+                    "q": 0,
+                    "from": "system.adapter.google-assistant.0",
+                    "user": "system.user.admin",
+                    "lc": 1627075808940
+                }
+            }
+        ]
+    ],
+
+    "function": {
+        "result": {
+            "enum.functions.lighting": {
+                "type": "enum",
+                "common": {
+                    "name": {
+                        "en": "Lighting",
+                        "ru": "Светильник",
+                        "de": "Beleuchtung",
+                        "fr": "Éclairages",
+                        "it": "Illuminazione",
+                        "nl": "Verlichting",
+                        "pl": "Oprawy Oświetleniowe",
+                        "pt": "Iluminações",
+                        "es": "Iluminaciones",
+                        "zh-cn": "照明"
+                    },
+                    "enabled": true,
+                    "color": false,
+                    "desc": "",
+                    "members": ["hs100.0.192_168_200_27"],
+                    "icon": "data:image/svg+xml;base64,PHN2ZyB2Z...Zz4NCg=="
+                },
+                "native": {},
+                "_id": "enum.functions.lighting",
+                "enums": {},
+                "from": "system.adapter.admin.0",
+                "user": "system.user.admin",
+                "ts": 1627512457872
+            },
+            "enum.functions.heating": {
+                "type": "enum",
+                "common": {
+                    "name": {
+                        "en": "Heating",
+                        "ru": "Отопление",
+                        "de": "Heizung",
+                        "fr": "Chauffe-Eau",
+                        "it": "Riscaldatore",
+                        "nl": "Verwarmer",
+                        "pl": "Podgrzewacz",
+                        "pt": "Aquecedor",
+                        "es": "Calentador",
+                        "zh-cn": "加热器"
+                    },
+                    "enabled": true,
+                    "color": false,
+                    "desc": "",
+                    "members": [],
+                    "icon": "data:image/svg+xml;base64,PHN2ZyB2ZXJ..3N2Zz4NCg=="
+                },
+                "native": {},
+                "_id": "enum.functions.heating",
+                "from": "system.adapter.admin.0",
+                "user": "system.user.admin",
+                "ts": 1627512607010
+            }
+        },
+        "requestEnum": "enum.functions"
+    }
+}

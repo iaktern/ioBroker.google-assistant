@@ -8,6 +8,10 @@
 // you need to create an adapter
 const utils = require('@iobroker/adapter-core');
 const io = require('socket.io-client');
+const {
+    addDeviceTypeToThing,
+    addLocationToThing,
+} = require('./lib/things-structure-helper.js');
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -28,13 +32,15 @@ class GoogleAssistant extends utils.Adapter {
         // this.on('objectChange', this.onObjectChange.bind(this));
         // this.on('message', this.onMessage.bind(this));
         this.on('unload', this.onUnload.bind(this));
+
+        this.things = [];
     }
 
     /**
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady() {
-        await this.getRoomsAndDevices();
+        await this.getAllThingsDataAndRegisterForChanges();
         await this.connectToCloudWebSocket();
 
         // /** examples */
@@ -47,6 +53,13 @@ class GoogleAssistant extends utils.Adapter {
         // await this.setStates();
         // // ioBroker examples
         // await this.readStates();
+    }
+
+    sendAllThings() {
+        this.log.info(
+            'Send all "things" to server: ' + JSON.stringify(this.things)
+        );
+        this.socket.emit('all_things', this.things);
     }
 
     async connectToCloudWebSocket() {
@@ -76,77 +89,103 @@ class GoogleAssistant extends utils.Adapter {
         this.log.info(`WebSocket URL to connect to from configuration: ${url}`);
 
         /** */
-        const socket = io(url);
+        this.socket = io(url);
 
         // client-side
-        socket.on('connect', async () => {
-            this.log.info('WebSocket Event: connect' + socket.id); // x8WIv7-mJelg7on_ALbx
+        this.socket.on('connect', async () => {
+            this.log.info(`Connected to Server, Socket.id: ${this.socket.id}`);
             await this.setStateAsync('info.connection', {
                 val: true,
                 ack: true,
             });
+
+            //first act: send current things structure
+            this.sendAllThings();
         });
 
-        socket.on('connect_error', () => {
-            this.log.info('WebSocket Event: connect_error');
-        });
-
-        socket.on('disconnect', async () => {
-            this.log.info('WebSocket Event: disconnect' + socket.id); // undefined
+        this.socket.on('disconnect', async (reason) => {
+            this.log.info('WebSocket disconnected: ' + reason); // undefined
             await this.setStateAsync('info.connection', {
                 val: false,
                 ack: true,
             });
         });
 
-        socket.io.on('reconnect_attempt', async () => {
-            this.log.info('WebSocket Event: Reconnect_Attempt');
+        this.socket.on('connect_error', () => {
+            // this.log.debug('WebSocket Event: connect_error');
+        });
+
+        this.socket.io.on('reconnect_attempt', async () => {
+            // this.log.debug('WebSocket Event: Reconnect_Attempt');
             await this.setStateAsync('info.connection', {
                 val: false,
                 ack: true,
             });
         });
 
-        socket.io.on('reconnect', () => {
-            this.log.info('WebSocket Event: Reconnect');
+        this.socket.io.on('reconnect', () => {
+            this.log.debug('WebSocket Event: Reconnect');
+        });
+
+        this.socket.on('get_all_things', () => {
+            this.log.debug('WebSocket: get_all_things event');
+            this.sendAllThings();
         });
     }
 
-    async getRoomsAndDevices() {
-        this.log.info(
-            '\n\nEnums: ' + JSON.stringify(await this.getEnumAsync(''))
-        );
-        /*
-         * { "enum.rooms.hall": { ..., members: [<states>], ...},
-         *   "enum.rooms.bathroom": { ..., members: [<states>], ...},
-         *   "enum.rooms.living_room": { ..., members: [<states>], ...},
-         * }
-         */
-        const roomsEnum = (await this.getEnumAsync('enum.rooms')).result;
+    async getAllThingsDataAndRegisterForChanges() {
+        // this.log.debug(
+        //     'Enums Object for Rooms (enum.rooms): ' +
+        //         JSON.stringify(await this.getEnumAsync('enum.rooms'))
+        // ); // very big
 
-        /*
-         * Map< 'room', { metaInfoGoogle: { ... }, deviceMap: Map< 'objectId', { metaInfo: {}, metaInfoGoogle: {}, currentState: {...} } > }}
-         * for example:
-         * Map< 'enum.rooms.hall', { googleMetaInfo: { ... }, deviceMap: Map< '0_userdata.0.example_state', { ... } > }}
-         */
-        const roomMap = new Map();
-        for (const room of Object.keys(roomsEnum)) {
-            this.log.info(room);
-            // this.log.info(roomsEnum[room].common.members);
-
-            const deviceMapForRoom = await this.getDeviceInfos(
-                roomsEnum[room].common.members
-            );
-
-            this.log.info(
-                'deviceMap: ' + JSON.stringify(Array.from(deviceMapForRoom))
-            );
-            roomMap.set(room, {
-                googleMetaInfo: {},
-                deviceMap: deviceMapForRoom,
+        const typesEnum = (await this.getEnumAsync('enum.functions')).result;
+        for (const type of Object.keys(typesEnum)) {
+            typesEnum[type].common.members.forEach((deviceId) => {
+                this.log.info('Device found: ' + deviceId + ' in ' + type);
+                this.pushDeviceToThingsArrayIfNotYetExists(deviceId);
+                addDeviceTypeToThing(
+                    this.things,
+                    deviceId,
+                    typesEnum[type]._id
+                );
             });
         }
-        this.log.info('roomMap: ' + JSON.stringify(Array.from(roomMap)));
+
+        const roomsEnum = (await this.getEnumAsync('enum.rooms')).result;
+        for (const room of Object.keys(roomsEnum)) {
+            roomsEnum[room].common.members.forEach((deviceId) => {
+                addLocationToThing(
+                    this.things,
+                    deviceId,
+                    roomsEnum[room].common.name.en
+                );
+            });
+        }
+        console.log(this.things);
+    }
+
+    /**
+     * Adds a new thing/device to the things array if the device id is not yet included
+     * @param {*} device
+     */
+    pushDeviceToThingsArrayIfNotYetExists(device) {
+        if (this.things.some((d) => d.deviceId == device)) {
+            this.log.debug(
+                `Device ${device} alreay in thing list: ${this.things.map(
+                    (d) => d.deviceId
+                )}`
+            );
+        } else {
+            this.things.push({
+                deviceId: device,
+                deviceName: { key: '', synonyms: [] },
+                deviceTypes: [],
+                location: '',
+                states: [],
+                capabilities: [],
+            });
+        }
     }
 
     async getDeviceInfos(deviceIds) {
@@ -156,21 +195,21 @@ class GoogleAssistant extends utils.Adapter {
                 (await this.getForeignObjectAsync(objectId)) || {};
             const tmpCurrentState =
                 (await this.getForeignStateAsync(objectId)) || {};
-            this.log.info(
-                'Device found in room "' + objectId + '" '
-                // + JSON.stringify(
-                //     tmpMetaInfo
-                // )
-            );
+            // this.log.info(
+            // 'Device found in room "' + objectId + '" '
+            // + JSON.stringify(
+            //     tmpMetaInfo
+            // )
+            // );
 
             // test if 'state' and not other object type
             if (tmpMetaInfo.type !== 'state') {
-                this.log.info(
-                    'The device "' +
-                        objectId +
-                        '" is not a state and will not be added to the device list: ' +
-                        JSON.stringify(tmpMetaInfo)
-                );
+                // this.log.info(
+                //     'The device "' +
+                //         objectId +
+                //         '" is not a state and will not be added to the device list: ' +
+                //         JSON.stringify(tmpMetaInfo)
+                // );
                 continue;
             }
 
@@ -277,8 +316,8 @@ class GoogleAssistant extends utils.Adapter {
         // The adapters config(in the instance object everything under the attribute "native") is accessible via this.config:
         // every new config value must be added in io-package.json -> native first
         // then it can be modified with the GUI (./admin/index_m.html)
-        this.log.debug('config option1: ' + this.config.option1);
-        this.log.debug('config option2: ' + this.config.option2);
+        // this.log.debug('config option1: ' + this.config.option1);
+        // this.log.debug('config option2: ' + this.config.option2);
 
         // Complete io-package.json and package.json
         // this.log.info('\nioPack ' + JSON.stringify(this.ioPack));
@@ -297,8 +336,8 @@ class GoogleAssistant extends utils.Adapter {
             systemConfig (must be activated): ${this.systemConfig},
             adapterDir: ${this.adapterDir},
             version: ${this.version},
-            connected: ${this.connected}
-            dateFormat: ${this.dateFormat}`
+            connected: ${this.connected}`
+            // dateFormat: ${this.dateFormat}`
         );
     }
 
